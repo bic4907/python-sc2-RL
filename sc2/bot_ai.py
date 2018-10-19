@@ -569,6 +569,7 @@ class BotAI(object):
 
     def on_end(self, game_result: Result):
         """Ran at the end of a game."""
+
         pass
 
 class CanAffordWrapper(object):
