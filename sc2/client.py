@@ -88,6 +88,14 @@ class Client(Protocol):
             if is_resign:
                 raise
 
+
+    async def restart(self):
+        try:
+            await self._execute(restart_game=sc_pb.RequestRestartGame())
+        except ProtocolError:
+            if is_resign:
+                raise
+
     async def save_replay(self, path):
         logger.debug(f"Requesting replay from server")
         result = await self._execute(save_replay=sc_pb.RequestSaveReplay())
