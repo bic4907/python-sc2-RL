@@ -14,6 +14,10 @@ class UnitFeature():
         self.UNITCOLOR[SUPPLYDEPOT] = (165, 165, 0)
         self.UNITCOLOR[BARRACKS] = (165, 64, 165)
 
+
+    def get_feature_shape(self):
+        return np.zeros([35, 35])
+
     def render(self, show=True):
         game_data = np.zeros((self.env.game_info.map_size[1], self.env.game_info.map_size[0], 3), dtype=np.uint8) # 3 for RGB
 
@@ -33,9 +37,9 @@ class UnitFeature():
         cv2.imshow('UnitFeature_cropped', cropped)
         cv2.waitKey(1)
 
+        return cropped
 
 
-        pass
 
 
 
