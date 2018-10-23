@@ -6,6 +6,8 @@ class Macro():
         self.env = bot
 
     async def run(self, action):
+        await self.default_action()
+
         if action == 0:
             self.NO_OP()
         elif action == 1:
@@ -16,6 +18,15 @@ class Macro():
             await self.BUILD_SUPPLYDEPOT()
         elif action == 4:
             await self.BUILD_BARRACK()
+
+    async def default_action(self):
+        # SCV
+        await self.env.distribute_workers()
+
+
+
+
+
 
     def NO_OP(self):
         pass

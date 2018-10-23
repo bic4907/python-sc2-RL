@@ -42,7 +42,13 @@ class Client(Protocol):
         return self._status == Status.in_game
 
     async def join_game(self, race=None, observed_player_id=None, portconfig=None):
-        ifopts = sc_pb.InterfaceOptions(raw=True, score=True)
+        ifopts = sc_pb.InterfaceOptions(raw=True, score=True,
+                                        feature_layer=sc_pb.SpatialCameraSetup (
+                                            width=2,
+                                            resolution=common_pb.Size2DI(x=100,y=100),
+                                            minimap_resolution=common_pb.Size2DI(x=100,y=100)
+                                            )
+                                        ) # 임시로 설정해둔 값
 
         if race is None:
             assert isinstance(observed_player_id, int)

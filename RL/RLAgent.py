@@ -8,7 +8,7 @@ from sc2.unit_command import UnitCommand
 from sc2.position import Point2, Point3
 
 from UnitFeature import UnitFeature
-from Net import Net
+from Net import DQN
 from Macro import Macro
 
 class RLAgent(sc2.BotAI):
@@ -18,42 +18,71 @@ class RLAgent(sc2.BotAI):
     net = None
     macro = None
 
+    # variables for RL
+    obs = None
+
+
     def on_start(self):
         self.macro = Macro(self)
 
         self.f_unit = UnitFeature(self)
         f_unit_shape = self.f_unit.get_feature_shape()
-        f_unit_shape_flatten = f_unit_shape.reshape([-1, 1])
 
         self.available_actions = ['NO_OP', 'TRAIN_SCV', 'TRAIN_MARINE', 'BUILD_SUPPLYDEPOT', 'BUILD_BARRACK']
 
-        self.net = Net(f_unit_shape_flatten.shape[0] , len(self.available_actions))
-        self.net.global_step = 0
+        self.DQN = DQN(f_unit_shape.shape , len(self.available_actions))
 
+        self.prev_obs = None
+        self.prev_a = None
+        self.prev_score = 0
+    '''
+        Variables
+        s = prev_obs
+        a = prev_a
+        r = ??          # 지금은 sparse reward
+        s' = obs
+        done            # 시나리오 끝날 때 되면 done 수동처리 및 환경리셋
+    '''
     async def on_step(self, iteration):
-        if self.state.game_loop > 10 and self.state.game_loop >= 14300:
-            await self._client.restart()
+        self.DQN.step = self.state.game_loop / 8
+        done = False
+        r = self.state.score.score
+        #print(self.state.observation)
+        with open('C:\\Users\\Admin\\Desktop\\observation.txt', 'w') as f:
+            f.write(str(self.state.observation))
+            f.close()
+            exit()
 
-        f_unit = self.f_unit.render(show=True)
+        if self.state.game_loop > 20 and self.state.game_loop >= 14000:
+            done = True
 
-        if iteration % 8 != 0:
+        if iteration % 10 != 0:
             return
 
+        f_unit = self.f_unit.render(show=False)
+        obs = f_unit
 
 
-        self.net.global_step = self.state.game_loop / 8
+        action = self.DQN.get_action(obs)
 
-        f_unit_shape_flatten = f_unit.reshape([-1, 1])
-
-        action = self.net.get_action(f_unit_shape_flatten)
-        print('Macro run', self.available_actions[action], "at", iteration)
-        await self.macro.run(action)
-
-
+        if self.prev_obs is not None:
+            self.DQN.push_to_buffer([self.prev_obs, self.prev_a, self.state.score.score - self.prev_score, obs, done])
 
 
 
+        self.prev_obs = obs
+        self.prev_a = action
 
+
+
+
+        if done:
+            await self._client.restart()
+            self.DQN.clear_buffer()
+            self.prev_score = 0
+        else:
+            #print('Macro run', self.available_actions[action - 1], "at", iteration)
+            await self.macro.run(action)
 
 
 
@@ -63,11 +92,12 @@ class RLAgent(sc2.BotAI):
 
 
 
-
+import math
 def main():
     sc2.run_game(sc2.maps.get("BuildMarines"), [
         Bot(Race.Terran, RLAgent())
-    ], realtime=False)
+    ], realtime=False
+    )
 
 
 if __name__ == '__main__':

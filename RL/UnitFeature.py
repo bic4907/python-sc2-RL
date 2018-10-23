@@ -16,9 +16,9 @@ class UnitFeature():
 
 
     def get_feature_shape(self):
-        return np.zeros([35, 35])
+        return np.zeros([35, 35, 3])
 
-    def render(self, show=True):
+    def render(self, show=False):
         game_data = np.zeros((self.env.game_info.map_size[1], self.env.game_info.map_size[0], 3), dtype=np.uint8) # 3 for RGB
 
         #print(self.env.state.observation.map_state)
@@ -31,11 +31,14 @@ class UnitFeature():
 
         game_data = cv2.flip(game_data, 0)
         cropped = game_data[20:55, 15:50]
-        #origin_resized = cv2.resize(game_data, dsize=None, fx=5, fy=5)
-        #cropped_resized = cv2.resize(cropped, dsize=None, fx=5, fy=5)
-       # cv2.imshow('UnitFeature_resized', origin_resized)
-        cv2.imshow('UnitFeature_cropped', cropped)
-        cv2.waitKey(1)
+        # origin_resized = cv2.resize(game_data, dsize=None, fx=5, fy=5)
+        # cropped_resized = cv2.resize(cropped, dsize=None, fx=5, fy=5)
+        # cv2.imshow('UnitFeature_resized', origin_resized)
+
+
+        if show:
+            cv2.imshow('UnitFeature_cropped', cropped)
+            cv2.waitKey(1)
 
         return cropped
 
