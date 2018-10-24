@@ -47,11 +47,20 @@ class RLAgent(sc2.BotAI):
         self.DQN.step = self.state.game_loop / 8
         done = False
         r = self.state.score.score
-        #print(self.state.observation)
-        with open('C:\\Users\\Admin\\Desktop\\observation.txt', 'w') as f:
-            f.write(str(self.state.observation))
+
+        import pickle
+        with open('C:\\Users\\Admin\\Desktop\\git\\python-sc2-RL\\RL\\playground\\observation2.pkl', 'wb') as f:
+            pickle.dump(self.state.observation, f)
             f.close()
-            exit()
+        exit()
+        #for key, value in self.state.feature['screen'].items():
+        #    value.save_image(key + '.jpg')
+
+        #print(self.state.feature['screen']['height_map'].save_image('HIHI.jpg'))
+        # with open('C:\\Users\\Admin\\Desktop\\observation.txt', 'w') as f:
+        #     f.write(str(self.state.observation))
+        #     f.close()
+        #     exit()
 
         if self.state.game_loop > 20 and self.state.game_loop >= 14000:
             done = True

@@ -44,7 +44,7 @@ class Client(Protocol):
     async def join_game(self, race=None, observed_player_id=None, portconfig=None):
         ifopts = sc_pb.InterfaceOptions(raw=True, score=True,
                                         feature_layer=sc_pb.SpatialCameraSetup (
-                                            width=2,
+                                            width=24,
                                             resolution=common_pb.Size2DI(x=100,y=100),
                                             minimap_resolution=common_pb.Size2DI(x=100,y=100)
                                             )

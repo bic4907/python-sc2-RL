@@ -1,5 +1,7 @@
-Feature_layer_data
-Renders
+# Feature_layer_data
+
+   ## Renders
+
 	Height_map 
 		Bits_per_pixel:8
 		Size: X and Y
