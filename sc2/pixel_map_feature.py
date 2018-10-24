@@ -15,8 +15,8 @@ class FeatureRenderDataTypes():
     unit_hit_points_ratio   =   numpy.uint8
     unit_energy             =   numpy.uint32
     unit_energy_ratio       =   numpy.uint8
-    unit_shield             =   numpy.uint32
-    unit_shield_ratio       =   numpy.uint8
+    unit_shields             =   numpy.uint32
+    unit_shields_ratio       =   numpy.uint8
     player_relative         =   numpy.uint8
     unit_density_aa         =   numpy.uint8
     unit_density            =   numpy.uint8
@@ -40,9 +40,15 @@ class PixelMapFeature(object):
         self._proto = proto
         self.data = bytearray(self._proto.data)
         _dtype = getattr(getattr(FeatureDataTypes, type), attr)
-        data_np = numpy.frombuffer(self.data, dtype=_dtype)
-        data_np = data_np.reshape([-1, self._proto.size.y, self._proto.size.x])
-        self.convert = data_np
+
+        if _dtype != numpy.bool:
+            data_np = numpy.frombuffer(self.data, dtype=_dtype)
+            data_np = data_np.reshape([-1, self._proto.size.y, self._proto.size.x])
+            self.convert = data_np
+        else:
+            data_np = numpy.unpackbits(self.data)
+            data_np = data_np.reshape([-1, self._proto.size.y, self._proto.size.x])
+            self.convert = data_np
 
     @property
     def width(self):

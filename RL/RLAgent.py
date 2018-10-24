@@ -47,12 +47,17 @@ class RLAgent(sc2.BotAI):
         self.DQN.step = self.state.game_loop / 8
         done = False
         r = self.state.score.score
-
+        '''
         import pickle
         with open('C:\\Users\\Admin\\Desktop\\git\\python-sc2-RL\\RL\\playground\\observation2.pkl', 'wb') as f:
             pickle.dump(self.state.observation, f)
             f.close()
         exit()
+        '''
+
+        print(self.state.feature)
+
+
         #for key, value in self.state.feature['screen'].items():
         #    value.save_image(key + '.jpg')
 

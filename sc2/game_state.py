@@ -1,6 +1,7 @@
 from .units import Units
 from .power_source import PsionicMatrix
 from .pixel_map import PixelMap
+from .pixel_map_feature import PixelMapFeature
 from .ids.upgrade_id import UpgradeId
 from .ids.effect_id import EffectId
 from .position import Point2, Point3
@@ -120,6 +121,34 @@ class GameState(object):
 
         self.upgrades: Set[UpgradeId] = {UpgradeId(upgrade) for upgrade in
                          self.observation.raw_data.player.upgrade_ids}  # usage: if TERRANINFANTRYWEAPONSLEVEL1 in self.state.upgrades: do stuff
+
+
+        # Settings for feature layer
+        self.feature = dict()
+        self.feature['render'] = dict()
+        self.feature['render']['height_map'] = PixelMapFeature(self.observation.feature_layer_data.renders.height_map, 'render', 'height_map')
+        self.feature['render']['visibility_map'] = PixelMapFeature(self.observation.feature_layer_data.renders.visibility_map, 'render', 'visibility_map')
+        self.feature['render']['creep'] = PixelMapFeature(self.observation.feature_layer_data.renders.creep, 'render', 'creep')
+        self.feature['render']['power'] = PixelMapFeature(self.observation.feature_layer_data.renders.power, 'render', 'power')
+        self.feature['render']['player_id'] = PixelMapFeature(self.observation.feature_layer_data.renders.player_id, 'render', 'player_id')
+        self.feature['render']['unit_type'] = PixelMapFeature(self.observation.feature_layer_data.renders.unit_type, 'render', 'unit_type')
+        self.feature['render']['selected'] = PixelMapFeature(self.observation.feature_layer_data.renders.selected, 'render', 'selected')
+        self.feature['render']['unit_hit_points'] = PixelMapFeature(self.observation.feature_layer_data.renders.unit_hit_points, 'render', 'unit_hit_points')
+        self.feature['render']['unit_hit_points_ratio'] = PixelMapFeature(self.observation.feature_layer_data.renders.unit_hit_points_ratio, 'render', 'unit_hit_points_ratio')
+        self.feature['render']['unit_energy'] = PixelMapFeature(self.observation.feature_layer_data.renders.unit_energy, 'render', 'unit_energy')
+        self.feature['render']['unit_energy_ratio'] = PixelMapFeature(self.observation.feature_layer_data.renders.unit_energy_ratio, 'render', 'unit_energy_ratio')
+        self.feature['render']['unit_shields'] = PixelMapFeature(self.observation.feature_layer_data.renders.unit_shields, 'render', 'unit_shields')
+        self.feature['render']['unit_shields_ratio'] = PixelMapFeature(self.observation.feature_layer_data.renders.unit_shields_ratio, 'render', 'unit_shields_ratio')
+        self.feature['render']['player_relative'] = PixelMapFeature(self.observation.feature_layer_data.renders.player_relative, 'render', 'player_relative')
+        self.feature['render']['unit_density_aa'] = PixelMapFeature(self.observation.feature_layer_data.renders.unit_density_aa, 'render', 'unit_density_aa')
+        self.feature['render']['unit_density'] = PixelMapFeature(self.observation.feature_layer_data.renders.unit_density, 'render', 'unit_density')
+        self.feature['render']['effects'] = PixelMapFeature(self.observation.feature_layer_data.renders.effects, 'render', 'effects')
+
+
+
+
+
+
 
     @property
     def mineral_field(self) -> Units:
