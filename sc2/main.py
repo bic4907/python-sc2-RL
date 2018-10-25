@@ -36,9 +36,11 @@ async def _play_game_ai(client, player_id, ai, realtime, step_time_limit, game_t
     while True:
         state = await client.observation()
 
-        if client._game_result:
-            ai.on_end(client._game_result[player_id])
-            return client._game_result[player_id]
+        #if client._game_result:
+         #   pass
+            #await client.restart()
+            #ai.on_end(client._game_result[player_id])
+            #return client._game_result[player_id]
 
         gs = GameState(state.observation, game_data)
 

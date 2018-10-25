@@ -21,8 +21,10 @@ class Macro():
 
     async def default_action(self):
         # SCV
-        await self.env.distribute_workers()
-
+        try:
+            await self.env.distribute_workers()
+        except:
+            pass
 
 
 

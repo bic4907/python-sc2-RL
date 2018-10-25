@@ -427,7 +427,8 @@ class BotAI(object):
             self.vespene -= cost.vespene
 
         else:
-            logger.error(f"Error: {r} (action: {action})")
+            pass
+            #logger.error(f"Error: {r} (action: {action})")
 
         return r
 

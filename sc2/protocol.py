@@ -48,7 +48,8 @@ class Protocol(object):
 
         new_status = Status(response.status)
         if new_status != self._status:
-            logger.info(f"Client status changed to {new_status} (was {self._status})")
+            pass
+            #logger.info(f"Client status changed to {new_status} (was {self._status})")
         self._status = new_status
 
         if response.error:

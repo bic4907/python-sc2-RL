@@ -2,29 +2,29 @@ import numpy as np
 import torch
 import random
 import cv2
+import torch.nn.functional as F
 from torch import nn
 
 MAX_EPISODE = 1000000000
-MEMORY_SIZE = 200
+MEMORY_SIZE = 1000
 UPDATE_INTERVAL = 100 # copy interval main to target
 GAMMA = 0.9
 EPSILON = 0.9
 LEARNING_RATE = 0.01
 
 
-
-
 class Net(nn.Module):
 
 
-    def __init__(self, s_dim, a_dim):
+    def __init__(self, s_dim, a_dim, param_dim):
         super(Net, self).__init__()
 
         self.s_dim = s_dim
         self.a_dim = a_dim
+        self.param_dim = param_dim
 
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=32, kernel_size=5, padding=1),
+            nn.Conv2d(in_channels=1, out_channels=32, kernel_size=5, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2),
             nn.Conv2d(32, 64, kernel_size=4, padding=1),
@@ -35,12 +35,15 @@ class Net(nn.Module):
             nn.MaxPool2d(kernel_size=2),
             nn.Conv2d(32, 16, kernel_size=2, padding=1),
             nn.ReLU()
-        )
+        ).cuda()
 
         self.fc = nn.Sequential(
-            nn.Linear(16 * 4 * 4, a_dim),
+            nn.Linear(2704, 1302),
+            nn.ReLU(),
+            nn.Linear(1302, a_dim + param_dim),
             nn.ReLU()
-        )
+        ).cuda()
+
 
         self.step = 0
 
@@ -48,11 +51,11 @@ class Net(nn.Module):
         if s.dim() == 3:
             s = s[np.newaxis, :]
         # multi-channel to single-channel
-        convert_dataset = []
-        for data in s:
-            b, g, r = cv2.split(data.numpy())
-            convert_dataset.append([b, g, r])
-        s = torch.Tensor(convert_dataset)
+        # convert_dataset = []
+        # for data in s:
+        #     b, g, r = cv2.split(data.numpy())
+        #     convert_dataset.append([b, g, r])
+        s = torch.Tensor(s).cuda()
 
         conv_out = self.conv(s)
         flatten = conv_out.view(conv_out.size(0), -1)
@@ -69,28 +72,32 @@ class DQN():
         self.t_net = Net(s_dim, a_dim)
 
         initialize(self.m_net)
-        initialize(self.t_net)
 
         self.optimizer = torch.optim.Adam(self.m_net.parameters(), lr=LEARNING_RATE)
 
     def update_target(self):
         self.t_net.load_state_dict(self.m_net.state_dict())
 
-    def push_to_buffer(self, traj):
-        #print(s, a, r, s_, done)
-        self.replay_buffer.append(traj)
-        if len(self.replay_buffer) > MEMORY_SIZE:
+    def push_to_buffer(self, s, a, r, s_, done):
+        s = s.reshape(-1)
+        a = np.array([a]).reshape(-1)
+        r = np.array([r]).reshape(-1)
+        s_ = s_.reshape(-1)
+        done = np.array([done]).reshape(-1)
+
+        transition = np.hstack((s, a, r, s_, done))
+        if self.is_replay_full():
             self.replay_buffer.pop(0)
-        #print(np.array(self.replay_buffer).shape)
+        self.replay_buffer.append(transition)
 
     def clear_buffer(self):
         self.replay_buffer.clear()
 
     def is_replay_full(self):
-        return len(self.replay_buffer) >= MEMORY_SIZE
+        return len(self.replay_buffer) == MEMORY_SIZE
 
     def train(self):
-        sample = random.sample(self.replay_buffer, 5)
+        sample = random.sample(self.replay_buffer, 35)
         loss = self.get_loss(sample)
 
         self.optimizer.zero_grad()
@@ -101,26 +108,32 @@ class DQN():
         if np.random.uniform() > EPSILON or self.step < MEMORY_SIZE:  # Exploration
             action = np.random.randint(0, self.a_dim)
         else:
-            #print('default', np2torch(obs).shape)
             q_value = self.m_net.forward(np2torch(obs))
-            #print('NO_OP', q_value[0].data, 'TRAIN_SCV', q_value[1].data,  'TRAIN_MARINE', q_value[2].data,  'BUILD_SUPPLYDEPOT', q_value[3].data,  'BUILD_BARRACK', q_value[4].data)
-            action = torch.argmax(q_value).detach().numpy()
+
+            action = torch.argmax(q_value).detach().cpu().numpy()
         return action
 
+    def get_probs(self, obs):
+        q_value = self.m_net.forward(np2torch(obs))
+        q_softmax = F.softmax(q_value, dim=-1)
+        return q_softmax.detach().cpu().numpy()[0]
 
     def get_loss(self, memory):
         s_dim = self.s_dim
         memory = np.vstack(memory)
-        batch_s = torch.Tensor(memory[:, 0:3675])
-        batch_a = torch.LongTensor(memory[:, 3675]).reshape([-1, 1])
-        batch_r = torch.Tensor(memory[:, 3676]).reshape([-1, 1])
-        batch_s_ = torch.Tensor(memory[:, 3677:-1])
+
+        batch_s = torch.Tensor(memory[:, 0:10000])
+        batch_a = torch.LongTensor(memory[:, 10000]).reshape([-1, 1])
+        batch_r = torch.Tensor(memory[:, 10001]).reshape([-1, 1])
+        batch_s_ = torch.Tensor(memory[:, 10002:-1])
         batch_done = torch.Tensor(memory[:, -1]).reshape([-1, 1])
 
+        batch_s = batch_s.reshape([-1, 1, 100, 100])
+        batch_s_ = batch_s_.reshape([-1, 1, 100, 100])
 
-        q_next = self.t_net.forward(batch_s_).max(dim=-1)[0].reshape([-1, 1]).detach()
+        q_next = self.t_net.forward(batch_s_).cpu().max(dim=-1)[0].reshape([-1, 1]).detach()
         target = (batch_r + GAMMA * q_next)
-        main = self.m_net.forward(batch_s).gather(dim=1, index=batch_a)
+        main = self.m_net.forward(batch_s).cpu().gather(dim=1, index=batch_a)
 
         return torch.nn.MSELoss()(main, target)
 
@@ -136,7 +149,7 @@ def np2torch(np_array, dtype=np.float32):
 
 def initialize(m):
     if type(m) == nn.Linear:
-        m.weight.data.normal_(0.0, 0.02)
+        m.weight.data.normal_(0.0, 0.1)
         m.bias.data.fill_(0)
 '''
 if __name__ == '__main__':
