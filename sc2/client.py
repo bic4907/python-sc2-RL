@@ -94,10 +94,17 @@ class Client(Protocol):
             if is_resign:
                 raise
 
+    async def reset(self):
+        try:
+            await self._execute(restart_game=sc_pb.RequestRestartGame())
+        except ProtocolError:
+            if is_resign:
+                raise
 
     async def restart(self):
         try:
-            await self._execute(restart_game=sc_pb.RequestRestartGame())
+            self._status = Status = enum.Enum("Status", sc_pb.Status.init_game)
+            await self._execute(map_command=sc_pb.RequestMapCommand(trigger_cmd="restart"))
         except ProtocolError:
             if is_resign:
                 raise
