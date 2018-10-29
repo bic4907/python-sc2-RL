@@ -41,8 +41,6 @@ def unit_type(scale=None):
 palette = unit_type()
 print(palette.shape)
 
-img = Image.fromarray(a, 'I')
-img.show()
 
 x_size = a.shape[1]
 y_size = a.shape[0]
@@ -54,19 +52,20 @@ for y in range(y_size):
     for x in range(x_size):
         color = palette[a[y][x]]
         rgb[y][x] = color
-
+        #print("%3d" % int(color[2]), end='')
+    #print()
 
 
 
         #print(palette[a[i][j]])
 
 
-
+rgb = rgb / 255
 print('END', time.time())
-cv2.imshow('Color image', rgb)
+cv2.imshow('Window', rgb)
 cv2.waitKey(0)
-img = Image.fromarray(rgb, mode='RGB')
-img.show()
+# img = Image.fromarray(rgb, mode='RGB')
+# img.show()
 
 
 
