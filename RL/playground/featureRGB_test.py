@@ -8,43 +8,67 @@ import time
 from enum import Enum
 import numpy as np
 
-import sc2.colors, sc2.static_data
+import sc2.colors as colors
+import sc2.static_data as static_data
 
 with open('observation2.pkl', 'rb') as f:
     obs = pickle.load(f)
     f.close()
-#print(obs.feature_layer_data.renders.unit_type)
+
 print('START', time.time())
 unit_type = obs.feature_layer_data.renders.unit_type
 
 
 map = bytearray(unit_type.data)
 a = np.frombuffer(map, dtype=np.int32)
-print(a.shape)
 a = a.reshape(200, 200)
-print(a.shape)
-print(a)
+
 
 def unit_type(scale=None):
   """Returns a palette that maps unit types to rgb colors."""
   # Can specify a scale to match the api or to accept unknown unit types.
+
   palette_size = scale or max(static_data.UNIT_TYPES) + 1
-  palette = shuffled_hue(palette_size)
-  assert len(static_data.UNIT_TYPES) <= len(distinct_colors)
+
+
+  palette = colors.shuffled_hue(palette_size)
+  assert len(static_data.UNIT_TYPES) <= len(colors.distinct_colors)
   for i, v in enumerate(static_data.UNIT_TYPES):
-    print(i, v)
-    palette[v] = distinct_colors[i]
+
+    palette[v] = colors.distinct_colors[i]
   return palette
 
-a = unit_type(a)
-
-
-
+palette = unit_type()
+print(palette.shape)
 
 img = Image.fromarray(a, 'I')
 img.show()
 
+x_size = a.shape[1]
+y_size = a.shape[0]
+
+rgb = np.zeros([y_size, x_size, 3])
+
+
+for y in range(y_size):
+    for x in range(x_size):
+        color = palette[a[y][x]]
+        rgb[y][x] = color
+
+
+
+
+        #print(palette[a[i][j]])
+
+
+
 print('END', time.time())
+cv2.imshow('Color image', rgb)
+cv2.waitKey(0)
+img = Image.fromarray(rgb, mode='RGB')
+img.show()
+
+
 
 class FeatureRenderDataTypes():
     height_map              =   numpy.uint8
