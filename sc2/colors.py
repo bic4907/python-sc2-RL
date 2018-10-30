@@ -24,6 +24,8 @@ import random
 from future.builtins import range  # pylint: disable=redefined-builtin
 import numpy
 
+import sc2.static_data as static_data
+
 class Color(collections.namedtuple("Color", ["r", "g", "b"])):
   """A basic Color class."""
   __slots__ = ()
