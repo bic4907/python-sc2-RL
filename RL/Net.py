@@ -5,13 +5,11 @@ import cv2
 import torch.nn.functional as F
 from torch import nn
 
-MAX_EPISODE = 1000000000
-MEMORY_SIZE = 400000
-UPDATE_INTERVAL = 500 # copy interval main to target
+MEMORY_SIZE = 100000
 GAMMA = 0.99
-EPSILON = 0.9
-LEARNING_RATE = 1e-4
 
+EPSILON_MIN = 0.001
+LEARNING_RATE = 1e-4
 
 class Net(nn.Module):
 
@@ -24,7 +22,7 @@ class Net(nn.Module):
         self.param_dim = param_dim
 
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=32, kernel_size=5, padding=1),
+            nn.Conv2d(in_channels=3, out_channels=32, kernel_size=5, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2),
             nn.Conv2d(32, 64, kernel_size=4, padding=1),
@@ -34,21 +32,20 @@ class Net(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2),
             nn.Conv2d(32, 16, kernel_size=2, padding=1),
-            nn.ReLU()
+            nn.ReLU(),
         ).cuda()
 
         self.action_fc = nn.Sequential(
-            nn.Linear(2704, 1302),
+            nn.Linear(576, 1302),
             nn.ReLU(),
             nn.Linear(1302, a_dim),
             nn.ReLU()
         ).cuda()
 
         self.param_fc = nn.Sequential(
-            nn.Linear(2704 + a_dim, 1302),
+            nn.Linear(576 + a_dim, 1302),
             nn.ReLU(),
             nn.Linear(1302, 2),
-            nn.ReLU(),
             nn.Sigmoid()
         ).cuda()
 
@@ -80,6 +77,9 @@ class Net(nn.Module):
 class DQN():
     def __init__(self, s_dim, a_dim):
         self.replay_buffer = []
+        self.global_step = 0
+        self.global_episode = 0
+        self.epsilon = 1
 
         self.s_dim = s_dim
         self.a_dim = a_dim
@@ -117,7 +117,6 @@ class DQN():
 
     def train(self):
         sample = random.sample(self.replay_buffer, 35)
-
         action_loss, param_loss = self.get_loss(sample)
 
         # Update Paramter Network first
@@ -133,27 +132,20 @@ class DQN():
 
 
     def get_action(self, obs):
-        global EPSILON
-
         cnn_feature = self.m_net.cnn_forward(np2torch(obs))
 
-        if (not self.is_replay_full()) or np.random.uniform() > EPSILON:  # Exploration
+        if random.uniform(0, 1) <= self.epsilon:  # Exploration
             rand_a = np.random.randint(0, self.a_dim)
             action = np.array([[rand_a]])
             param = np.random.rand(2)
-
         else:
             q_value = self.m_net.action_forward(cnn_feature)
             action = torch.argmax(q_value).cpu().detach().reshape([-1, 1])
             param = np.random.rand(2)
 
+        if (self.epsilon > EPSILON_MIN):
+            self.epsilon = self.epsilon * 0.999
 
-            '''
-            if self.require_position[int(action)]:
-                param = self.m_net.param_forward(cnn_feature, action).detach().cpu().numpy()[0]
-            else:
-                param = np.array([None, None])
-            '''
         return int(action), param
 
     def get_param(self, cnn_feature, action):
@@ -170,11 +162,11 @@ class DQN():
         memory = np.vstack(memory)
 
         # Make Batches
-        q_batch_s = torch.Tensor(memory[:, 0:10000]).reshape([-1, 1, 100, 100])
-        q_batch_a = torch.LongTensor(memory[:, 10000]).reshape([-1, 1])
-        q_batch_r = torch.Tensor(memory[:, 10001]).reshape([-1, 1])
-        p_batch_r = torch.Tensor(memory[:, 10002]).reshape([-1, 1])
-        q_batch_s_ = torch.Tensor(memory[:, 10003:]).reshape([-1, 1, 100, 100])
+        q_batch_s = torch.Tensor(memory[:, 0:7500]).reshape([-1, 3, 50, 50])
+        q_batch_a = torch.LongTensor(memory[:, 7500]).reshape([-1, 1])
+        q_batch_r = torch.Tensor(memory[:, 7501]).reshape([-1, 1])
+        p_batch_r = torch.Tensor(memory[:, 7502]).reshape([-1, 1])
+        q_batch_s_ = torch.Tensor(memory[:, 7503:]).reshape([-1, 3, 50, 50])
 
 
         m_cnn_features = self.m_net.cnn_forward(q_batch_s)
@@ -196,6 +188,27 @@ class DQN():
         '''
         # Return Action loss, Param loss
         return action_loss, None
+
+    def save(self):
+        state = {
+            'global_episode': self.global_episode,
+            'global_step': self.global_step,
+            'main_net': self.m_net.state_dict(),
+            'target_net': self.t_net.state_dict(),
+            'replay_buffer': self.replay_buffer,
+            'epsilon': self.epsilon
+        }
+        torch.save(state, 'save_model/' + ("%07d" % (self.global_episode)) + '.pt')
+
+    def load(self, path):
+        data = torch.load('save_model/' + path)
+        self.global_episode = data['global_episode']
+        self.global_step = data['global_step']
+        self.m_net.load_state_dict(data['main_net'])
+        self.t_net.load_state_dict(data['target_net'])
+        self.replay_buffer = data['replay_buffer']
+        self.epsilon = data['epsilon']
+        print('Load model : ' + path)
 
 def np2torch(np_array, dtype=np.float32):
     if np_array.dtype != dtype:

@@ -2,10 +2,9 @@ import pickle
 import numpy as np
 import cv2
 
-
 import sc2.colors as colors
 
-class UnitFeature:
+class UnitFeature():
 
     palette = None
     obs = None
@@ -16,7 +15,6 @@ class UnitFeature:
     def __init__(self, feature_map=None):
         self.palette = colors.unit_type()
         assert feature_map is not None
-
         self.width = feature_map.size.x
         self.height = feature_map.size.y
         self.raw = np.frombuffer(bytearray(feature_map.data), dtype=np.int32).reshape(self.height, self.width)
@@ -35,24 +33,10 @@ class UnitFeature:
     # Change [height, width, 3(RGB)] to [3(RGB), height, width]
     @property
     def dataset(self):
-        img = self.numpy
+        src = self.numpy
+        return np.array(cv2.split(src))
 
-
-
-    def show(self):
+    def show(self, w_name=''):
         img = self.numpy / 255
-        cv2.imshow('', img)
+        cv2.imshow(w_name, img)
         cv2.waitKey(0)
-
-
-if __name__ == '__main__':
-
-
-    with open('playground/observation2.pkl', 'rb') as f:
-        obs = pickle.load(f)
-        f.close()
-
-    unit_type = obs.feature_layer_data.renders.unit_type
-    uf = UnitFeature(feature_map=unit_type)
-    uf.show()
-    uf.show()

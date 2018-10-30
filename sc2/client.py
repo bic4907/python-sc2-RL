@@ -45,8 +45,8 @@ class Client(Protocol):
         ifopts = sc_pb.InterfaceOptions(raw=True, score=True,
                                         feature_layer=sc_pb.SpatialCameraSetup (
                                             width=24,
-                                            resolution=common_pb.Size2DI(x=100,y=100),
-                                            minimap_resolution=common_pb.Size2DI(x=100,y=100)
+                                            resolution=common_pb.Size2DI(x=50,y=50),
+                                            minimap_resolution=common_pb.Size2DI(x=50,y=50)
                                             )
                                         ) # 임시로 설정해둔 값
 
