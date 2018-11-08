@@ -13,8 +13,8 @@ from FeatureRGB import UnitFeature
 from Net import DQN
 from Macro import Macro
 
-LOAD_MODEL = False
-MODEL_NAME = '0000034.pt'
+LOAD_MODEL = True
+MODEL_NAME = '0000250.pt'
 
 class RLAgent(sc2.BotAI):
 
@@ -100,7 +100,7 @@ class RLAgent(sc2.BotAI):
         if self.prev_obs is not None:
             self.DQN.push_to_buffer(self.prev_obs, self.prev_a, action_r, param_r, obs)
 
-        if self.DQN.global_step > 10000:
+        if self.DQN.global_step > 10000 and len(self.DQN.replay_buffer) > 100:
             self.DQN.train()
 
         if self.DQN.global_step % 10000 == 0:

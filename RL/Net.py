@@ -195,7 +195,6 @@ class DQN():
             'global_step': self.global_step,
             'main_net': self.m_net.state_dict(),
             'target_net': self.t_net.state_dict(),
-            'replay_buffer': self.replay_buffer,
             'epsilon': self.epsilon
         }
         torch.save(state, 'save_model/' + ("%07d" % (self.global_episode)) + '.pt')
@@ -206,7 +205,7 @@ class DQN():
         self.global_step = data['global_step']
         self.m_net.load_state_dict(data['main_net'])
         self.t_net.load_state_dict(data['target_net'])
-        self.replay_buffer = data['replay_buffer']
+        #self.replay_buffer = data['replay_buffer']
         self.epsilon = data['epsilon']
         print('Load model : ' + path)
 
